@@ -19,6 +19,9 @@ public class Game {
         return new GameBuilder();
     }
 
+    public void displayBoard(){
+        this.board.displayBoard();
+    }
     public Board getBoard() {
         return board;
     }
