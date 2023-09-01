@@ -2,6 +2,8 @@ package Models;
 
 import Exceptions.InvalidDimensionException;
 import Exceptions.InvalidNumberOfPlayers;
+import Strategies.gameWinningStrategy.GameWinningStrategy;
+import Strategies.gameWinningStrategy.OrderOneWinningStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,9 +12,10 @@ public class Game {
 
     private Board board;
     private List<Player> player;
-    private List<Move> move;
+    private List<Move> moves;
     private GameStatus gameStatus;
     private int nextPlayerIndex;
+    private GameWinningStrategy gameWinningStrategy;
     private Player winner;
 
     public static GameBuilder getBuilder(){
@@ -22,6 +25,46 @@ public class Game {
     public void displayBoard(){
         this.board.displayBoard();
     }
+
+    public void makeNextMove(){
+        //1. Get the next player to move.
+        Player currentMovePlayer = player.get(nextPlayerIndex);
+
+        //2. Player should decide the move.
+        Move move = currentMovePlayer.decideMove(this.getBoard());
+
+        //3. Validate the move.
+        int row = move.getCell().getRow();
+        int col = move.getCell().getCol();
+
+        while(board.getBoard().get(row).get(col).getCellState().equals(CellState.FILLED)){
+            System.out.println("The cell is filled already, Please make a move on empty cell");
+            move = currentMovePlayer.decideMove(this.getBoard());
+            row = move.getCell().getRow();
+            col = move.getCell().getCol();
+        }
+
+
+        //4. If the move is valid, then make the move.
+        System.out.println("Move happened at (" + row+", "+col+")");
+        board.getBoard().get(row).get(col).setCellState(CellState.FILLED);
+        board.getBoard().get(row).get(col).setPlayer(currentMovePlayer);
+
+        //5. Add this move in the final list of Moves.
+        moves.add(move);
+
+        //6. Check if the player has WON the game.
+        if(gameWinningStrategy.checkWinner(board, currentMovePlayer, move.getCell())){
+            gameStatus= GameStatus.ENDED;
+            winner= currentMovePlayer;
+        }
+
+        //7. Move to the next Player.
+        nextPlayerIndex+=1;
+        nextPlayerIndex%=player.size();
+
+    }
+
     public Board getBoard() {
         return board;
     }
@@ -39,11 +82,11 @@ public class Game {
     }
 
     public List<Move> getMove() {
-        return move;
+        return moves;
     }
 
-    public void setMove(List<Move> move) {
-        this.move = move;
+    public void setMove(List<Move> moves) {
+        this.moves = moves;
     }
 
     public GameStatus getGameStatus() {
@@ -60,6 +103,14 @@ public class Game {
 
     public void setNextPlayerIndex(int nextPlayerIndex) {
         this.nextPlayerIndex = nextPlayerIndex;
+    }
+
+    public GameWinningStrategy getGameWinningStrategy() {
+        return gameWinningStrategy;
+    }
+
+    public void setGameWinningStrategy(GameWinningStrategy gameWinningStrategy) {
+        this.gameWinningStrategy = gameWinningStrategy;
     }
 
     public Player getWinner() {
@@ -92,6 +143,8 @@ public class Game {
             return this;
         }
 
+
+
         private boolean isValid() throws InvalidDimensionException, InvalidNumberOfPlayers {
             //Game validations will come here.
             if(this.dimension < 3){
@@ -111,7 +164,7 @@ public class Game {
             try {
                 isValid();
             } catch (Exception exception){
-                System.out.println("Exception occured during Game creation");
+                System.out.println("Exception occurred during Game creation");
             }
 
             Game game = new Game();
@@ -120,12 +173,11 @@ public class Game {
             game.setPlayer(player);
             game.setMove(new ArrayList<>());
             game.setNextPlayerIndex(0);
+            game.setGameWinningStrategy(new OrderOneWinningStrategy(dimension));
 
             return game;
         }
     }
-
-
 }
 
 

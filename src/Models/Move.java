@@ -24,4 +24,5 @@ public class Move {
     public void setCell(Cell cell) {
         this.cell = cell;
     }
+
 }
